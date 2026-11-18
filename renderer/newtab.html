@@ -5,80 +5,220 @@
 <title>New Tab</title>
 <link rel="icon" href="icons/browser.png">
 <style>
-  :root { --accent:#6d4aff; --bg:#16151d; --bg2:#1f1d2b; --bg3:#2a2738; --fg:#ece9f7; --muted:#8d88a5; }
+  :root {
+    --accent:#6d4aff; --bg:#16151d; --bg2:#1f1d2b; --bg3:#2a2738;
+    --fg:#ece9f7; --muted:#8d88a5;
+  }
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { background:var(--bg); color:var(--fg); font-family:'Segoe UI',system-ui,sans-serif; padding:32px; min-height:100vh; }
-  .hero { text-align:center; margin-bottom:28px; }
-  .hero h1 { font-size:42px; letter-spacing:-1px; }
+  html, body { height:100%; }
+  body {
+    background:var(--bg); color:var(--fg);
+    font-family:'Segoe UI',system-ui,sans-serif;
+    display:flex; flex-direction:column; align-items:center;
+    overflow-y:auto; position:relative;
+  }
+  /* custom background layer */
+  #bg-layer {
+    position:fixed; inset:0; z-index:0;
+    background-size:cover; background-position:center;
+    transition:opacity .3s;
+  }
+  #bg-dim {
+    position:fixed; inset:0; z-index:1;
+    background:rgba(13,12,18,.62);
+  }
+  .content { position:relative; z-index:2; width:100%; max-width:1100px;
+             padding:7vh 24px 60px; display:flex; flex-direction:column; align-items:center; }
+
+  .hero { text-align:center; margin-bottom:34px; }
+  .hero h1 { font-size:64px; font-weight:800; letter-spacing:-2px; }
   .hero h1 span { color:var(--accent); }
-  .search { display:flex; max-width:640px; margin:20px auto 0; }
-  .search input { flex:1; height:48px; padding:0 20px; border-radius:24px 0 0 24px; border:1px solid var(--bg3); background:var(--bg2); color:var(--fg); font-size:15px; outline:none; }
+  .hero .tagline { color:var(--muted); font-size:15px; margin-top:2px; }
+
+  .search {
+    display:flex; width:min(680px,100%); margin:26px auto 0;
+    box-shadow:0 8px 32px rgba(0,0,0,.45); border-radius:30px;
+  }
+  .search input {
+    flex:1; height:60px; padding:0 28px; font-size:18px;
+    border-radius:30px 0 0 30px; border:2px solid transparent;
+    background:var(--bg2); color:var(--fg); outline:none;
+  }
   .search input:focus { border-color:var(--accent); }
-  .search button { height:48px; padding:0 24px; border:none; border-radius:0 24px 24px 0; background:var(--accent); color:#fff; font-size:15px; cursor:pointer; }
-  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; max-width:1080px; margin:28px auto 0; }
-  .widget { background:var(--bg2); border:1px solid var(--bg3); border-radius:14px; padding:18px; }
-  .widget h3 { font-size:14px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:12px; }
-  .stat-big { font-size:36px; font-weight:700; color:var(--accent); }
-  .stat-sub { color:var(--muted); font-size:12px; margin-top:4px; }
-  .wx-temp { font-size:34px; font-weight:700; }
-  .wx-meta { color:var(--muted); font-size:13px; margin-top:6px; line-height:1.6; }
-  .news-item { padding:8px 0; border-bottom:1px solid var(--bg3); font-size:13px; line-height:1.45; }
+  .search button {
+    height:60px; padding:0 34px; border:none; cursor:pointer;
+    border-radius:0 30px 30px 0; background:var(--accent); color:#fff; font-size:17px; font-weight:600;
+  }
+  .search button:hover { filter:brightness(1.1); }
+  .engine-hint { color:var(--muted); font-size:13px; margin-top:10px; }
+  .engine-hint b { color:var(--fg); font-weight:600; }
+
+  .quick { display:flex; gap:12px; margin:22px 0 8px; flex-wrap:wrap; justify-content:center; }
+  .quick a {
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+    width:84px; padding:14px 6px; text-decoration:none; color:var(--fg);
+    background:rgba(31,29,43,.85); border:1px solid var(--bg3); border-radius:14px; font-size:12px;
+  }
+  .quick a:hover { border-color:var(--accent); }
+  .quick .glyph { font-size:24px; }
+
+  .grid {
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+    gap:18px; width:100%; margin-top:26px;
+  }
+  .widget {
+    background:rgba(31,29,43,.88); border:1px solid var(--bg3);
+    border-radius:18px; padding:22px; backdrop-filter:blur(6px);
+  }
+  .widget h3 {
+    font-size:13px; color:var(--muted); text-transform:uppercase;
+    letter-spacing:1.5px; margin-bottom:14px;
+  }
+  .stat-big { font-size:52px; font-weight:800; color:var(--accent); line-height:1; }
+  .stat-sub { color:var(--muted); font-size:13px; margin-top:8px; }
+
+  .wx-temp { font-size:52px; font-weight:800; line-height:1; }
+  .wx-meta { color:var(--muted); font-size:14px; margin-top:10px; line-height:1.7; }
+  #city-form { display:flex; gap:8px; margin-top:14px; }
+  #city-input {
+    flex:1; padding:9px 14px; border-radius:10px; border:1px solid var(--bg3);
+    background:var(--bg3); color:var(--fg); outline:none; font-size:13px;
+  }
+  #city-form button {
+    padding:9px 16px; border:none; border-radius:10px;
+    background:var(--accent); color:#fff; cursor:pointer; font-size:13px;
+  }
+
+  .news-item { padding:10px 0; border-bottom:1px solid var(--bg3); font-size:14px; line-height:1.5; }
   .news-item:last-child { border-bottom:none; }
   .news-item a { color:var(--fg); text-decoration:none; }
   .news-item a:hover { color:var(--accent); }
-  .clock { font-size:13px; color:var(--muted); float:right; }
-  #city-form { display:flex; gap:6px; margin-top:10px; }
-  #city-input { flex:1; padding:6px 10px; border-radius:8px; border:1px solid var(--bg3); background:var(--bg3); color:var(--fg); outline:none; font-size:12px; }
+
+  .big-clock { text-align:center; margin-bottom:6px; }
+  #clock { font-size:44px; font-weight:700; letter-spacing:1px; }
+  #date { color:var(--muted); font-size:14px; margin-top:4px; }
+
+  /* background controls */
+  #bg-controls {
+    position:fixed; bottom:14px; right:16px; z-index:3;
+    display:flex; gap:8px; align-items:center;
+    background:rgba(31,29,43,.92); border:1px solid var(--bg3);
+    padding:8px 10px; border-radius:12px;
+  }
+  #bg-controls input {
+    width:190px; padding:7px 10px; border-radius:8px; border:1px solid var(--bg3);
+    background:var(--bg3); color:var(--fg); outline:none; font-size:12px;
+  }
+  #bg-controls button {
+    padding:7px 12px; border:none; border-radius:8px;
+    background:var(--bg3); color:var(--fg); cursor:pointer; font-size:12px;
+  }
+  #bg-controls button:hover { background:var(--accent); }
+  #bg-file { display:none; }
 </style>
 </head>
 <body>
-  <div class="hero">
-    <h1>Purple<span>Wren</span></h1>
-    <form class="search" id="search-form">
-      <input id="search-input" type="text" placeholder="Search with Startpage…" autofocus>
-      <button type="submit">Search</button>
-    </form>
+  <div id="bg-layer"></div>
+  <div id="bg-dim"></div>
+
+  <div class="content">
+    <div class="hero">
+      <h1>Purple<span>Wren</span></h1>
+      <div class="tagline">Private by default. Powered by Startpage.</div>
+      <form class="search" id="search-form">
+        <input id="search-input" type="text" placeholder="Search the web privately…" autofocus>
+        <button type="submit">Search</button>
+      </form>
+      <div class="engine-hint">Engine: <b id="engine-name">Startpage</b> · change in ⚙ Settings</div>
+    </div>
+
+    <div class="big-clock">
+      <div id="clock">--:--</div>
+      <div id="date"></div>
+    </div>
+
+    <div class="quick">
+      <a href="#" data-url="https://mail.proton.me"><span class="glyph">✉</span>Mail</a>
+      <a href="#" data-url="https://docs.proton.me"><span class="glyph">📄</span>Docs</a>
+      <a href="#" data-url="https://drive.proton.me"><span class="glyph">☁</span>Drive</a>
+      <a href="#" data-url="https://www.startpage.com"><span class="glyph">🔍</span>Startpage</a>
+      <a href="#" data-url="https://lumo.proton.me"><span class="glyph">◆</span>Lumo</a>
+    </div>
+
+    <div class="grid">
+      <div class="widget">
+        <h3>🛡 Privacy statistics</h3>
+        <div class="stat-big" id="stat-blocked">0</div>
+        <div class="stat-sub">Trackers &amp; ads blocked this session</div>
+        <div class="stat-sub" id="stat-total"></div>
+      </div>
+
+      <div class="widget">
+        <h3>🌤 Weather</h3>
+        <div class="wx-temp" id="wx-temp">…</div>
+        <div class="wx-meta" id="wx-meta">Loading</div>
+        <form id="city-form">
+          <input id="city-input" type="text" placeholder="Change city…">
+          <button type="submit">Set</button>
+        </form>
+      </div>
+
+      <div class="widget">
+        <h3>📰 World news</h3>
+        <div id="news-list">Loading…</div>
+      </div>
+    </div>
   </div>
 
-  <div class="grid">
-    <div class="widget">
-      <h3>🛡 Privacy statistics</h3>
-      <div class="stat-big" id="stat-blocked">–</div>
-      <div class="stat-sub">Trackers &amp; ads blocked</div>
-      <div class="stat-sub" id="stat-total" style="margin-top:8px;"></div>
-    </div>
-
-    <div class="widget">
-      <h3>🌤 Weather <span class="clock" id="clock"></span></h3>
-      <div class="wx-temp" id="wx-temp">…</div>
-      <div class="wx-meta" id="wx-meta"></div>
-      <form id="city-form">
-        <input id="city-input" type="text" placeholder="Change city…">
-      </form>
-    </div>
-
-    <div class="widget">
-      <h3>📰 World news</h3>
-      <div id="news-list">Loading…</div>
-    </div>
+  <div id="bg-controls">
+    <input id="bg-url" type="text" placeholder="Image URL…">
+    <button id="bg-url-set">Set URL</button>
+    <label class="bg-btn" style="padding:7px 12px;border:none;border-radius:8px;background:var(--bg3);color:var(--fg);cursor:pointer;font-size:12px;">
+      Browse…
+      <input id="bg-file" type="file" accept="image/*">
+    </label>
+    <button id="bg-reset">Reset</button>
   </div>
 
 <script>
+  /* ---------- search ---------- */
+  const ENGINE_LABELS = { startpage:'Startpage', duckduckgo:'DuckDuckGo', brave:'Brave Search', google:'Google' };
+  const ENGINE_URLS = {
+    startpage:  q => 'https://www.startpage.com/sp/search?query=' + encodeURIComponent(q),
+    duckduckgo: q => 'https://duckduckgo.com/?q=' + encodeURIComponent(q),
+    brave:      q => 'https://search.brave.com/search?q=' + encodeURIComponent(q),
+    google:     q => 'https://www.google.com/search?q=' + encodeURIComponent(q)
+  };
   document.getElementById('search-form').addEventListener('submit', async e => {
     e.preventDefault();
     const q = document.getElementById('search-input').value.trim();
     if (!q) return;
     const s = await window.pwpage.settings();
     const eng = s.searchEngine || 'startpage';
-    const urls = {
-      startpage:  'https://www.startpage.com/sp/search?query=',
-      duckduckgo: 'https://duckduckgo.com/?q=',
-      brave:      'https://search.brave.com/search?q=',
-      google:     'https://www.google.com/search?q='
-    };
-    location.href = (urls[eng] || urls.startpage) + encodeURIComponent(q);
+    location.href = (ENGINE_URLS[eng] || ENGINE_URLS.startpage)(q);
   });
+  (async () => {
+    try {
+      const s = await window.pwpage.settings();
+      document.getElementById('engine-name').textContent = ENGINE_LABELS[s.searchEngine] || 'Startpage';
+    } catch (_) {}
+  })();
 
+  /* ---------- quick links ---------- */
+  document.querySelectorAll('.quick a').forEach(a =>
+    a.addEventListener('click', e => { e.preventDefault(); location.href = a.dataset.url; }));
+
+  /* ---------- clock ---------- */
+  function tickClock() {
+    const now = new Date();
+    document.getElementById('clock').textContent =
+      now.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+    document.getElementById('date').textContent =
+      now.toLocaleDateString([], { weekday:'long', month:'long', day:'numeric' });
+  }
+  tickClock(); setInterval(tickClock, 1000);
+
+  /* ---------- stats ---------- */
   (async () => {
     try {
       const stats = await window.pwpage.stats();
@@ -88,6 +228,7 @@
     } catch (_) {}
   })();
 
+  /* ---------- weather ---------- */
   async function loadWeather(city) {
     const w = await window.pwpage.weather(city);
     if (w.error) { document.getElementById('wx-meta').textContent = w.error; return; }
@@ -103,30 +244,58 @@
     if (c) { loadWeather(c); document.getElementById('city-input').value = ''; }
   });
 
-  setInterval(() => {
-    document.getElementById('clock').textContent =
-      new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  }, 1000);
-
+  /* ---------- news ---------- */
   (async () => {
     const el = document.getElementById('news-list');
-    const r = await window.pwpage.news();
-    if (r.error) { el.textContent = 'News unavailable: ' + r.error; return; }
-    const doc = new DOMParser().parseFromString(r.xml, 'text/xml');
-    const items = [...doc.querySelectorAll('item')].slice(0, 7);
-    el.innerHTML = '';
-    for (const it of items) {
-      const title = it.querySelector('title')?.textContent || '';
-      const link  = it.querySelector('link')?.textContent || '#';
-      const d = document.createElement('div');
-      d.className = 'news-item';
-      const a = document.createElement('a');
-      a.href = link; a.textContent = title; a.target = '_blank';
-      d.appendChild(a);
-      el.appendChild(d);
-    }
-    if (!items.length) el.textContent = 'No stories loaded.';
+    try {
+      const r = await window.pwpage.news();
+      if (r.error) { el.textContent = 'News unavailable: ' + r.error; return; }
+      const doc = new DOMParser().parseFromString(r.xml, 'text/xml');
+      const items = [...doc.querySelectorAll('item')].slice(0, 7);
+      el.innerHTML = '';
+      for (const it of items) {
+        const d = document.createElement('div');
+        d.className = 'news-item';
+        const a = document.createElement('a');
+        a.href = it.querySelector('link')?.textContent || '#';
+        a.textContent = it.querySelector('title')?.textContent || '';
+        a.target = '_blank';
+        d.appendChild(a);
+        el.appendChild(d);
+      }
+      if (!items.length) el.textContent = 'No stories loaded.';
+    } catch (e) { el.textContent = 'News unavailable.'; }
   })();
+
+  /* ---------- custom background ---------- */
+  const bgLayer = document.getElementById('bg-layer');
+  function applyBg(value) {
+    if (value) {
+      bgLayer.style.backgroundImage = 'url("' + value + '")';
+      localStorage.setItem('pw-bg', value);
+    } else {
+      bgLayer.style.backgroundImage = '';
+      localStorage.removeItem('pw-bg');
+    }
+  }
+  applyBg(localStorage.getItem('pw-bg'));          // restore on load
+
+  document.getElementById('bg-url-set').addEventListener('click', () => {
+    const u = document.getElementById('bg-url').value.trim();
+    if (u) applyBg(u);
+  });
+  document.getElementById('bg-url').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); document.getElementById('bg-url-set').click(); }
+  });
+  document.getElementById('bg-file').addEventListener('change', e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    if (f.size > 4 * 1024 * 1024) { alert('Image too large (keep under 4 MB)'); return; }
+    const reader = new FileReader();
+    reader.onload = () => applyBg(reader.result);
+    reader.readAsDataURL(f);
+  });
+  document.getElementById('bg-reset').addEventListener('click', () => applyBg(null));
 </script>
 </body>
 </html>
