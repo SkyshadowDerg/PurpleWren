@@ -7,7 +7,7 @@
 <style>
   :root {
     --accent:#6d4aff; --bg:#16151d; --bg2:#1f1d2b; --bg3:#2a2738;
-    --fg:#ece9f7; --muted:#8d88a5;
+    --fg:#ece9f7; --muted:#8d88a5; --wa:0.88;
   }
   * { margin:0; padding:0; box-sizing:border-box; }
   html, body { height:100%; }
@@ -17,78 +17,51 @@
     display:flex; flex-direction:column; align-items:center;
     overflow-y:auto; position:relative;
   }
-  /* custom background layer */
-  #bg-layer {
-    position:fixed; inset:0; z-index:0;
-    background-size:cover; background-position:center;
-    transition:opacity .3s;
-  }
-  #bg-dim {
-    position:fixed; inset:0; z-index:1;
-    background:rgba(13,12,18,.62);
-  }
+  #bg-layer { position:fixed; inset:0; z-index:0; background-size:cover; background-position:center; }
+  #bg-dim   { position:fixed; inset:0; z-index:1; background:rgba(13,12,18,.62); }
   .content { position:relative; z-index:2; width:100%; max-width:1100px;
-             padding:7vh 24px 60px; display:flex; flex-direction:column; align-items:center; }
+             padding:7vh 24px 80px; display:flex; flex-direction:column; align-items:center; }
 
-  .hero { text-align:center; margin-bottom:34px; }
+  .hero { text-align:center; margin-bottom:26px; }
   .hero h1 { font-size:64px; font-weight:800; letter-spacing:-2px; }
   .hero h1 span { color:var(--accent); }
   .hero .tagline { color:var(--muted); font-size:15px; margin-top:2px; }
 
-  .search {
-    display:flex; width:min(680px,100%); margin:26px auto 0;
-    box-shadow:0 8px 32px rgba(0,0,0,.45); border-radius:30px;
-  }
-  .search input {
-    flex:1; height:60px; padding:0 28px; font-size:18px;
+  .search { display:flex; width:min(680px,100%); margin:24px auto 0;
+            box-shadow:0 8px 32px rgba(0,0,0,.45); border-radius:30px; }
+  .search input { flex:1; height:60px; padding:0 28px; font-size:18px;
     border-radius:30px 0 0 30px; border:2px solid transparent;
-    background:var(--bg2); color:var(--fg); outline:none;
-  }
+    background:var(--bg2); color:var(--fg); outline:none; }
   .search input:focus { border-color:var(--accent); }
-  .search button {
-    height:60px; padding:0 34px; border:none; cursor:pointer;
-    border-radius:0 30px 30px 0; background:var(--accent); color:#fff; font-size:17px; font-weight:600;
-  }
-  .search button:hover { filter:brightness(1.1); }
+  .search button { height:60px; padding:0 34px; border:none; cursor:pointer;
+    border-radius:0 30px 30px 0; background:var(--accent); color:#fff; font-size:17px; font-weight:600; }
   .engine-hint { color:var(--muted); font-size:13px; margin-top:10px; }
-  .engine-hint b { color:var(--fg); font-weight:600; }
+  .engine-hint b { color:var(--fg); }
 
   .quick { display:flex; gap:12px; margin:22px 0 8px; flex-wrap:wrap; justify-content:center; }
-  .quick a {
-    display:flex; flex-direction:column; align-items:center; gap:6px;
+  .quick a { display:flex; flex-direction:column; align-items:center; gap:7px;
     width:84px; padding:14px 6px; text-decoration:none; color:var(--fg);
-    background:rgba(31,29,43,.85); border:1px solid var(--bg3); border-radius:14px; font-size:12px;
-  }
+    background:rgba(31,29,43,var(--wa)); border:1px solid var(--bg3);
+    border-radius:14px; font-size:12px; }
   .quick a:hover { border-color:var(--accent); }
-  .quick .glyph { font-size:24px; }
+  .quick img { width:32px; height:32px; border-radius:8px; }
+  .quick .glyph { font-size:24px; line-height:32px; }
 
-  .grid {
-    display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
-    gap:18px; width:100%; margin-top:26px;
-  }
-  .widget {
-    background:rgba(31,29,43,.88); border:1px solid var(--bg3);
-    border-radius:18px; padding:22px; backdrop-filter:blur(6px);
-  }
-  .widget h3 {
-    font-size:13px; color:var(--muted); text-transform:uppercase;
-    letter-spacing:1.5px; margin-bottom:14px;
-  }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+    gap:18px; width:100%; margin-top:26px; }
+  .widget { background:rgba(31,29,43,var(--wa)); border:1px solid var(--bg3);
+    border-radius:18px; padding:22px; }
+  .widget h3 { font-size:13px; color:var(--muted); text-transform:uppercase;
+    letter-spacing:1.5px; margin-bottom:14px; }
   .stat-big { font-size:52px; font-weight:800; color:var(--accent); line-height:1; }
   .stat-sub { color:var(--muted); font-size:13px; margin-top:8px; }
-
   .wx-temp { font-size:52px; font-weight:800; line-height:1; }
   .wx-meta { color:var(--muted); font-size:14px; margin-top:10px; line-height:1.7; }
   #city-form { display:flex; gap:8px; margin-top:14px; }
-  #city-input {
-    flex:1; padding:9px 14px; border-radius:10px; border:1px solid var(--bg3);
-    background:var(--bg3); color:var(--fg); outline:none; font-size:13px;
-  }
-  #city-form button {
-    padding:9px 16px; border:none; border-radius:10px;
-    background:var(--accent); color:#fff; cursor:pointer; font-size:13px;
-  }
-
+  #city-input { flex:1; padding:9px 14px; border-radius:10px; border:1px solid var(--bg3);
+    background:var(--bg3); color:var(--fg); outline:none; font-size:13px; }
+  #city-form button { padding:9px 16px; border:none; border-radius:10px;
+    background:var(--accent); color:#fff; cursor:pointer; font-size:13px; }
   .news-item { padding:10px 0; border-bottom:1px solid var(--bg3); font-size:14px; line-height:1.5; }
   .news-item:last-child { border-bottom:none; }
   .news-item a { color:var(--fg); text-decoration:none; }
@@ -98,22 +71,20 @@
   #clock { font-size:44px; font-weight:700; letter-spacing:1px; }
   #date { color:var(--muted); font-size:14px; margin-top:4px; }
 
-  /* background controls */
-  #bg-controls {
-    position:fixed; bottom:14px; right:16px; z-index:3;
+  /* background + widget controls (collapsible) */
+  #bg-controls { position:fixed; bottom:14px; right:16px; z-index:3;
     display:flex; gap:8px; align-items:center;
-    background:rgba(31,29,43,.92); border:1px solid var(--bg3);
-    padding:8px 10px; border-radius:12px;
-  }
-  #bg-controls input {
-    width:190px; padding:7px 10px; border-radius:8px; border:1px solid var(--bg3);
-    background:var(--bg3); color:var(--fg); outline:none; font-size:12px;
-  }
-  #bg-controls button {
-    padding:7px 12px; border:none; border-radius:8px;
-    background:var(--bg3); color:var(--fg); cursor:pointer; font-size:12px;
-  }
-  #bg-controls button:hover { background:var(--accent); }
+    background:rgba(31,29,43,.95); border:1px solid var(--bg3);
+    padding:8px 10px; border-radius:12px; }
+  #bg-controls.collapsed .ctl { display:none; }
+  #bg-controls input[type=text] { width:190px; padding:7px 10px; border-radius:8px;
+    border:1px solid var(--bg3); background:var(--bg3); color:var(--fg); outline:none; font-size:12px; }
+  #bg-controls button, #bg-controls label { padding:7px 12px; border:none; border-radius:8px;
+    background:var(--bg3); color:var(--fg); cursor:pointer; font-size:12px; }
+  #bg-controls button:hover, #bg-controls label:hover { background:var(--accent); }
+  #bg-controls .ctl-row { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--muted); }
+  #wa-slider { width:120px; accent-color:var(--accent); }
+  #bg-toggle { background:var(--accent) !important; color:#fff !important; }
   #bg-file { display:none; }
 </style>
 </head>
@@ -138,11 +109,11 @@
     </div>
 
     <div class="quick">
-      <a href="#" data-url="https://mail.proton.me"><span class="glyph">✉</span>Mail</a>
-      <a href="#" data-url="https://docs.proton.me"><span class="glyph">📄</span>Docs</a>
-      <a href="#" data-url="https://drive.proton.me"><span class="glyph">☁</span>Drive</a>
-      <a href="#" data-url="https://www.startpage.com"><span class="glyph">🔍</span>Startpage</a>
-      <a href="#" data-url="https://lumo.proton.me"><span class="glyph">◆</span>Lumo</a>
+      <a href="#" data-url="https://mail.proton.me" data-icon="https://mail.proton.me/favicon.ico"><span class="glyph">✉</span>Mail</a>
+      <a href="#" data-url="https://docs.proton.me" data-icon="https://docs.proton.me/favicon.ico"><span class="glyph">📄</span>Docs</a>
+      <a href="#" data-url="https://drive.proton.me" data-icon="https://drive.proton.me/favicon.ico"><span class="glyph">☁</span>Drive</a>
+      <a href="#" data-url="https://www.startpage.com" data-icon="https://www.startpage.com/favicon.ico"><span class="glyph">🔍</span>Startpage</a>
+      <a href="#" data-url="https://lumo.proton.me" data-icon="https://lumo.proton.me/favicon.ico"><span class="glyph">◆</span>Lumo</a>
     </div>
 
     <div class="grid">
@@ -152,7 +123,6 @@
         <div class="stat-sub">Trackers &amp; ads blocked this session</div>
         <div class="stat-sub" id="stat-total"></div>
       </div>
-
       <div class="widget">
         <h3>🌤 Weather</h3>
         <div class="wx-temp" id="wx-temp">…</div>
@@ -162,7 +132,6 @@
           <button type="submit">Set</button>
         </form>
       </div>
-
       <div class="widget">
         <h3>📰 World news</h3>
         <div id="news-list">Loading…</div>
@@ -170,14 +139,15 @@
     </div>
   </div>
 
-  <div id="bg-controls">
-    <input id="bg-url" type="text" placeholder="Image URL…">
-    <button id="bg-url-set">Set URL</button>
-    <label class="bg-btn" style="padding:7px 12px;border:none;border-radius:8px;background:var(--bg3);color:var(--fg);cursor:pointer;font-size:12px;">
-      Browse…
-      <input id="bg-file" type="file" accept="image/*">
-    </label>
-    <button id="bg-reset">Reset</button>
+  <div id="bg-controls" class="collapsed">
+    <button id="bg-toggle" title="Show/hide panel">⚙</button>
+    <input id="bg-url" class="ctl" type="text" placeholder="Image URL…">
+    <button id="bg-url-set" class="ctl">Set URL</button>
+    <label class="ctl">Browse…<input id="bg-file" type="file" accept="image/*"></label>
+    <button id="bg-reset" class="ctl">Reset</button>
+    <div class="ctl-row ctl">Widget opacity
+      <input id="wa-slider" type="range" min="20" max="100" value="88">
+    </div>
   </div>
 
 <script>
@@ -194,8 +164,7 @@
     const q = document.getElementById('search-input').value.trim();
     if (!q) return;
     const s = await window.pwpage.settings();
-    const eng = s.searchEngine || 'startpage';
-    location.href = (ENGINE_URLS[eng] || ENGINE_URLS.startpage)(q);
+    location.href = (ENGINE_URLS[s.searchEngine] || ENGINE_URLS.startpage)(q);
   });
   (async () => {
     try {
@@ -204,9 +173,17 @@
     } catch (_) {}
   })();
 
-  /* ---------- quick links ---------- */
-  document.querySelectorAll('.quick a').forEach(a =>
-    a.addEventListener('click', e => { e.preventDefault(); location.href = a.dataset.url; }));
+  /* ---------- quick links with official favicons ----------
+     Icons load from each service's OWN server (no third-party
+     favicon proxy). Emoji glyph stays as fallback if offline. */
+  document.querySelectorAll('.quick a').forEach(a => {
+    a.addEventListener('click', e => { e.preventDefault(); location.href = a.dataset.url; });
+    const img = document.createElement('img');
+    img.alt = '';
+    img.onload  = () => { const g = a.querySelector('.glyph'); if (g) g.replaceWith(img); };
+    img.onerror = () => img.remove();
+    img.src = a.dataset.icon;
+  });
 
   /* ---------- clock ---------- */
   function tickClock() {
@@ -278,8 +255,22 @@
       localStorage.removeItem('pw-bg');
     }
   }
-  applyBg(localStorage.getItem('pw-bg'));          // restore on load
+  applyBg(localStorage.getItem('pw-bg'));
 
+  /* ---------- widget opacity ---------- */
+  const root = document.documentElement;
+  function applyWa(v) {
+    root.style.setProperty('--wa', (v / 100).toFixed(2));
+    localStorage.setItem('pw-wa', v);
+  }
+  applyWa(Number(localStorage.getItem('pw-wa')) || 88);
+  const waSlider = document.getElementById('wa-slider');
+  waSlider.value = Number(localStorage.getItem('pw-wa')) || 88;
+  waSlider.addEventListener('input', () => applyWa(Number(waSlider.value)));
+
+  /* ---------- collapsible controls ---------- */
+  document.getElementById('bg-toggle').addEventListener('click', () =>
+    document.getElementById('bg-controls').classList.toggle('collapsed'));
   document.getElementById('bg-url-set').addEventListener('click', () => {
     const u = document.getElementById('bg-url').value.trim();
     if (u) applyBg(u);
