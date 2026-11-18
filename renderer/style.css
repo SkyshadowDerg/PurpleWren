@@ -142,3 +142,21 @@ webview.local-page { background: var(--bg); }
 .history-item:hover { background: var(--bg3); }
 .history-item .h-title { color: var(--fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .history-item .h-url { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#main-row { flex: 1; display: flex; min-height: 0; }
+
+#rail {
+  width: 52px; background: var(--bg); border-right: 1px solid var(--bg3);
+  display: flex; flex-direction: column; align-items: center;
+  padding: 8px 0; gap: 4px;
+}
+.rail-btn {
+  width: 38px; height: 38px; border: none; border-radius: 10px;
+  background: transparent; color: var(--fg); font-size: 16px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.rail-btn:hover { background: var(--bg3); }
+.rail-btn.active-dock { background: var(--accent); color: #fff; }
+.rail-sep { width: 26px; height: 1px; background: var(--bg3); margin: 6px 0; }
+
+#content { flex: 1; position: relative; background: var(--bg); display: flex; min-width: 0; }
+#dock { border-left: 1px solid var(--bg3); }
