@@ -1,0 +1,40 @@
+{
+  "name": "purplewren",
+  "version": "1.0.0",
+  "description": "Privacy-first, Proton-themed browser. Startpage search, tracker blocking, anti-fingerprinting, Tor & incognito tabs, built-in Lumo and Proton apps.",
+  "main": "main.js",
+  "license": "MIT",
+  "author": "SkyshadowDerg",
+  "repository": "https://github.com/SkyshadowDerg/PurpleWren",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win portable nsis",
+    "dist:linux": "electron-builder --linux AppImage"
+  },
+  "devDependencies": {
+    "electron": "^31.3.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "me.purplewren.browser",
+    "productName": "PurpleWren",
+    "files": ["main.js", "renderer/**/*"],
+    "directories": { "output": "dist" },
+    "win": {
+      "icon": "renderer/icons/browser.ico",
+      "target": [ { "target": "nsis" }, { "target": "portable" } ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "include": "installer.nsh"
+    },
+    "linux": {
+      "icon": "renderer/icons",
+      "target": "AppImage",
+      "category": "Network"
+    }
+  }
+}
