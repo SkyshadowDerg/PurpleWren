@@ -1,0 +1,24 @@
+<div align="center">
+
+# 🐉 PurpleWren: Privacy-First and Proton-Themed Browser, With all the Features of Chrome and the Privacy of Proton
+
+### *Developed with Assistance from Lumo*
+
+![License](https://img.shields.io/badge/License-MIT-6d4aff?style=for-the-badge&logo=open-source-initiative&logoColor=white)
+![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-6d4aff?style=for-the-badge&logo=electron&logoColor=white)
+![Engine](https://img.shields.io/badge/Built%20on-Electron-47848F?style=for-the-badge&logo=electron&logoColor=white)
+![Privacy](https://img.shields.io/badge/Telemetry-Zero-57d9a3?style=for-the-badge&logo=proton&logoColor=white)
+![Search](https://img.shields.io/badge/Default%20Search-Startpage-6d4aff?style=for-the-badge&logo=startpage&logoColor=white)
+
+**Tracker blocking · Anti-fingerprinting · Tor & Incognito tabs · Built-in Lumo AI ·
+Proton Mail, Docs, Sheets, Drive & Meet in a dock · VPN toggle · WrenMaps · Offline tools**
+
+</div>
+
+---
+
+> **⚡ One browser. Total control.**
+> PurpleWren wraps your everyday browsing in Proton's signature dark-purple aesthetic
+> while quietly shredding trackers, spoofing your fingerprint, and keeping every byte
+> of your data on your own machine. No accounts, no cloud, no telemetry — just you
+> and the web.
