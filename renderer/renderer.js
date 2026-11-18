@@ -10,6 +10,7 @@ const DOCKS = {
   converter: { title: '🔀 Converter' },
   hub:       { title: '☁ Proton hub' },
   mail:      { title: '✉ Proton Mail' }
+  profile:   { title: '👤 Proton account' }
 };
 
 let PATHS = null;
@@ -33,7 +34,6 @@ const FINGERPRINT_JS = `
     Object.defineProperty(screen, 'height',      { get: () => 1080 });
     Object.defineProperty(screen, 'availWidth',  { get: () => 1920 });
     Object.defineProperty(screen, 'availHeight', { get: () => 1040 });
-    Object.defineProperty(navigator, 'platform', get(){}; )0
     Object.defineProperty(navigator, 'platform',           { get: () => 'Win32' });
     Object.defineProperty(navigator, 'hardwareConcurrency', { get: () => 8 });
     Object.defineProperty(navigator, 'deviceMemory',        { get: () => 8 });
@@ -103,9 +103,10 @@ async function navigate(tab, input) {
     ? input
     : (await window.purplewren.resolve(input));
   if (!resolved) return;
-  tab.url = resolved;
+    tab.url = resolved;
   tab.view = tab.view || makeView(tab);
-    tab.view.src = resolved;
+  tab.view.src = resolved;
+  tab.view.classList.toggle('hidden', tab.id !== state.activeId);   
 }
 
 function makeView(tab) {
@@ -210,6 +211,7 @@ async function openDock(id) {
     if (PATHS && PATHS.pagePreload) v.setAttribute('preload', PATHS.pagePreload);
     if (id === 'lumo') v.src = (state.settings && state.settings.lumoUrl) || 'https://lumo.proton.me';
     else if (id === 'mail') v.src = 'https://mail.proton.me';
+    else if (id === 'profile') v.src = 'https://account.proton.me';
     else {
       const bar = document.createElement('div');
       bar.style.cssText = 'display:flex;gap:4px;padding:6px;background:var(--bg3);flex-wrap:wrap';
@@ -271,6 +273,16 @@ $('btn-calc').onclick     = () => openDock('calc');
 $('btn-convert').onclick  = () => openDock('converter');
 $('btn-hub').onclick      = () => openDock('hub');
 $('btn-mail').onclick     = () => openDock('mail');
+document.querySelectorAll('.rail-btn').forEach(b => {
+      b.addEventListener('click', async () => {
+        const d = b.dataset.dock;
+        if (d === 'maps')       { const p = await ensurePaths(); newTab(p.maps); }
+        else if (d === 'history')  showHistory();
+        else if (d === 'settings') showSettings();
+        else openDock(d);
+      });
+    });
+    $('btn-profile') && ($('btn-profile').onclick = () => openDock('profile'));
 $('btn-map').onclick      = async () => { const p = await ensurePaths(); newTab(p.maps); };
 $('btn-history').onclick  = () => showHistory();
 $('btn-settings').onclick = () => showSettings();
