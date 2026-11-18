@@ -1,4 +1,4 @@
-# 🐉 PurpleWren
+# 🐉 PurpleWren: Privacy-First and Proton-Themed Browser, With all the Features of Chrome and the Privacy of Proton
 
 A Proton-themed, privacy-first desktop browser built on Electron.
 Open source, runs 100% locally, Startpage as the default search engine.
