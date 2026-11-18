@@ -9,7 +9,7 @@ const DOCKS = {
   calc:      { title: '🧮 Calculator' },
   converter: { title: '🔀 Converter' },
   hub:       { title: '☁ Proton hub' },
-  mail:      { title: '✉ Proton Mail' }
+  mail:      { title: '✉ Proton Mail' },
   profile:   { title: '👤 Proton account' }
 };
 
