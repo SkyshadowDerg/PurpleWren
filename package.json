@@ -1,6 +1,6 @@
 {
   "name": "purplewren",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Privacy-first, Proton-themed browser. Startpage search, tracker blocking, anti-fingerprinting, Tor & incognito tabs, built-in Lumo and Proton apps.",
   "main": "main.js",
   "license": "MIT",
