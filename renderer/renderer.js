@@ -105,7 +105,7 @@ async function navigate(tab, input) {
   if (!resolved) return;
   tab.url = resolved;
   tab.view = tab.view || makeView(tab);
-  tab.view.loadURL(resolved);
+    tab.view.src = resolved;
 }
 
 function makeView(tab) {
@@ -249,7 +249,7 @@ $('omnibox').addEventListener('keydown', async e => {
   if (e.key !== 'Enter') return;
   const t = activeTab(); if (!t) return;
   const v = e.target.value.trim();
-  if (v) { await navigate(t, v); t.view.focus(); }
+    if (v) { await navigate(t, v); try { t.view.focus(); } catch (_) {} }
 });
 
 $('btn-back').onclick   = () => { const t = activeTab(); t && t.view && t.view.goBack(); };
