@@ -10,5 +10,6 @@ contextBridge.exposeInMainWorld('pwpage', {
   resolve:   input => ipcRenderer.invoke('pw:resolve', input),
   askLumo:   name  => ipcRenderer.send('pw:lumo-ask', name),
   convert:      payload => ipcRenderer.invoke('pw:convert', payload),
-  convertSave:  payload => ipcRenderer.invoke('pw:convert-save', payload)
+  convertSave:  payload => ipcRenderer.invoke('pw:convert-save', payload),
+  requestSettings: () => ipcRenderer.send('pw:open-settings-request'),
 });
