@@ -233,7 +233,7 @@ function createWindow() {
   win = new BrowserWindow({
     width: 1280, height: 850, minWidth: 900, minHeight: 600,
     frame: false, backgroundColor: '#16151d', icon: icon.isEmpty() ? undefined : icon,
-    webPreferences: { preload: R('preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: false }
+    webPreferences: { preload: R('preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: false, webviewTag: true }
   });
   win.loadFile(R('index.html'));
   win.webContents.on('did-finish-load', () => broadcast());   // first paint gets state
