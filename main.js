@@ -318,6 +318,9 @@ ipcMain.handle('pw:convert-save', async (_e, payload) => {
 ipcMain.on('pw:lumo-ask', (_e, question) => {           // Maps → Lumo dock
   if (win && !win.isDestroyed()) win.webContents.send('pw:maps-ask', question);
 });
+ipcMain.on('pw:open-settings-request', () => {
+  if (win) win.webContents.send('pw:show-settings');
+});
 
 /* ================= lifecycle ================= */
 const gotLock = app.requestSingleInstanceLock();
