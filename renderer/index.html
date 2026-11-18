@@ -1,0 +1,104 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>PurpleWren</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header id="titlebar">
+    <div id="drag-region"></div>
+    <div id="tb-buttons">
+      <button class="tb-btn" id="tb-min" title="Minimize">&#x2500;</button>
+      <button class="tb-btn" id="tb-max" title="Maximize">&#x25a1;</button>
+      <button class="tb-btn tb-close" id="tb-close" title="Close">&#x2715;</button>
+    </div>
+  </header>
+
+  <nav id="tabstrip">
+    <div id="tabs"></div>
+    <button id="btn-newtab" title="New tab (Ctrl+T)">+</button>
+    <div class="flex-spacer"></div>
+    <span id="shield-badge" title="Anti-fingerprinting active">🛡</span>
+    <button id="btn-newtab-tor" title="New Tor tab (Ctrl+Alt+Y)">🧅</button>
+    <button id="btn-newtab-incog" title="New incognito tab (Ctrl+Shift+T)">🕶</button>
+  </nav>
+
+  <nav id="toolbar">
+    <button id="btn-back" class="nav-btn" title="Back">&#8592;</button>
+    <button id="btn-fwd" class="nav-btn" title="Forward">&#8594;</button>
+    <button id="btn-reload" class="nav-btn" title="Reload">&#8635;</button>
+    <input id="omnibox" type="text" spellcheck="false" placeholder="Search Startpage or enter address">
+    <button id="btn-bookmark" class="nav-btn" title="Bookmark (Ctrl+D)">&#9733;</button>
+    <button id="btn-vpn" class="nav-btn" title="Proton VPN toggle">&#128274;</button>
+    <button id="btn-alias" class="nav-btn" title="Email alias (SimpleLogin)">&#9993;</button>
+    <button id="btn-lumo" class="nav-btn dock-btn" title="Lumo (Ctrl+J)">&#9670;</button>
+    <button id="btn-calc" class="nav-btn dock-btn" title="Calculator (Ctrl+Shift+C)"><img src="icons/calc.png" width="16" height="16" alt=""></button>
+    <button id="btn-convert" class="nav-btn dock-btn" title="File converter (Ctrl+Shift+F)"><img src="icons/convert.png" width="16" height="16" alt=""></button>
+    <button id="btn-hub" class="nav-btn dock-btn" title="Proton hub (Ctrl+Shift+P)">&#9729;</button>
+    <button id="btn-mail" class="nav-btn dock-btn" title="Proton Mail">&#9992;</button>
+    <button id="btn-map" class="nav-btn" title="Maps (Ctrl+M)"><img src="icons/maps.png" width="16" height="16" alt=""></button>
+    <button id="btn-history" class="nav-btn" title="History (Ctrl+H)">&#128218;</button>
+    <button id="btn-settings" class="nav-btn" title="Settings (Ctrl+,)">&#9881;</button>
+  </nav>
+
+  <div id="alias-modal" class="modal hidden">
+    <div class="modal-box">
+      <h3>&#9993; Generate email alias</h3>
+      <p class="muted">Via SimpleLogin (Proton's alias service). Forwards to your Proton Mail.</p>
+      <input id="alias-host" type="text" placeholder="site hostname">
+      <div id="alias-result" class="alias-result hidden">
+        <code id="alias-address"></code>
+        <button id="alias-copy" class="mini-btn">Copy</button>
+      </div>
+      <div class="modal-actions">
+        <button id="alias-cancel" class="mini-btn">Cancel</button>
+        <button id="alias-go" class="mini-btn primary">Generate</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="history-panel" class="overlay-panel hidden">
+    <h3>&#128218; History <button class="mini-btn" id="history-close">Close</button></h3>
+    <div id="history-list"></div>
+  </div>
+
+  <div id="settings-panel" class="overlay-panel hidden">
+    <h3>&#9881; Settings <button class="mini-btn" id="settings-close">Close</button></h3>
+    <label>Search engine
+      <select id="set-engine">
+        <option value="startpage">Startpage (default)</option>
+        <option value="duckduckgo">DuckDuckGo</option>
+        <option value="brave">Brave Search</option>
+        <option value="google">Google</option>
+      </select>
+    </label>
+    <label><input type="checkbox" id="set-fp"> Anti-fingerprint spoofing</label>
+    <label><input type="checkbox" id="set-strict"> Strict blocking (block all third-party)</label>
+    <label>Weather city <input type="text" id="set-city"></label>
+    <label>SimpleLogin API key <input type="password" id="set-slkey"></label>
+    <hr>
+    <h4>Proton VPN</h4>
+    <p class="muted" id="vpn-status">Checking&#8230;</p>
+    <div class="modal-actions">
+      <button id="vpn-connect" class="mini-btn">Connect</button>
+      <button id="vpn-disconnect" class="mini-btn">Disconnect</button>
+      <button id="vpn-recheck" class="mini-btn">Check Proton VPN</button>
+    </div>
+    <p class="muted small">A browser tab can't create a VPN tunnel; the official CLI
+    encrypts traffic system-wide &#8212; stronger than per-browser routing would be.</p>
+  </div>
+
+  <aside id="dock" class="hidden">
+    <div id="dock-header">
+      <span id="dock-title">Dock</span>
+      <button id="dock-close" class="mini-btn">&#10005;</button>
+    </div>
+    <div id="dock-content"></div>
+  </aside>
+
+  <main id="content"></main>
+
+<script src="renderer.js"></script>
+</body>
+</html>

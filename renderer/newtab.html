@@ -1,0 +1,132 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>New Tab</title>
+<link rel="icon" href="icons/browser.png">
+<style>
+  :root { --accent:#6d4aff; --bg:#16151d; --bg2:#1f1d2b; --bg3:#2a2738; --fg:#ece9f7; --muted:#8d88a5; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--fg); font-family:'Segoe UI',system-ui,sans-serif; padding:32px; min-height:100vh; }
+  .hero { text-align:center; margin-bottom:28px; }
+  .hero h1 { font-size:42px; letter-spacing:-1px; }
+  .hero h1 span { color:var(--accent); }
+  .search { display:flex; max-width:640px; margin:20px auto 0; }
+  .search input { flex:1; height:48px; padding:0 20px; border-radius:24px 0 0 24px; border:1px solid var(--bg3); background:var(--bg2); color:var(--fg); font-size:15px; outline:none; }
+  .search input:focus { border-color:var(--accent); }
+  .search button { height:48px; padding:0 24px; border:none; border-radius:0 24px 24px 0; background:var(--accent); color:#fff; font-size:15px; cursor:pointer; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; max-width:1080px; margin:28px auto 0; }
+  .widget { background:var(--bg2); border:1px solid var(--bg3); border-radius:14px; padding:18px; }
+  .widget h3 { font-size:14px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:12px; }
+  .stat-big { font-size:36px; font-weight:700; color:var(--accent); }
+  .stat-sub { color:var(--muted); font-size:12px; margin-top:4px; }
+  .wx-temp { font-size:34px; font-weight:700; }
+  .wx-meta { color:var(--muted); font-size:13px; margin-top:6px; line-height:1.6; }
+  .news-item { padding:8px 0; border-bottom:1px solid var(--bg3); font-size:13px; line-height:1.45; }
+  .news-item:last-child { border-bottom:none; }
+  .news-item a { color:var(--fg); text-decoration:none; }
+  .news-item a:hover { color:var(--accent); }
+  .clock { font-size:13px; color:var(--muted); float:right; }
+  #city-form { display:flex; gap:6px; margin-top:10px; }
+  #city-input { flex:1; padding:6px 10px; border-radius:8px; border:1px solid var(--bg3); background:var(--bg3); color:var(--fg); outline:none; font-size:12px; }
+</style>
+</head>
+<body>
+  <div class="hero">
+    <h1>Purple<span>Wren</span></h1>
+    <form class="search" id="search-form">
+      <input id="search-input" type="text" placeholder="Search with Startpage…" autofocus>
+      <button type="submit">Search</button>
+    </form>
+  </div>
+
+  <div class="grid">
+    <div class="widget">
+      <h3>🛡 Privacy statistics</h3>
+      <div class="stat-big" id="stat-blocked">–</div>
+      <div class="stat-sub">Trackers &amp; ads blocked</div>
+      <div class="stat-sub" id="stat-total" style="margin-top:8px;"></div>
+    </div>
+
+    <div class="widget">
+      <h3>🌤 Weather <span class="clock" id="clock"></span></h3>
+      <div class="wx-temp" id="wx-temp">…</div>
+      <div class="wx-meta" id="wx-meta"></div>
+      <form id="city-form">
+        <input id="city-input" type="text" placeholder="Change city…">
+      </form>
+    </div>
+
+    <div class="widget">
+      <h3>📰 World news</h3>
+      <div id="news-list">Loading…</div>
+    </div>
+  </div>
+
+<script>
+  document.getElementById('search-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const q = document.getElementById('search-input').value.trim();
+    if (!q) return;
+    const s = await window.pwpage.settings();
+    const eng = s.searchEngine || 'startpage';
+    const urls = {
+      startpage:  'https://www.startpage.com/sp/search?query=',
+      duckduckgo: 'https://duckduckgo.com/?q=',
+      brave:      'https://search.brave.com/search?q=',
+      google:     'https://www.google.com/search?q='
+    };
+    location.href = (urls[eng] || urls.startpage) + encodeURIComponent(q);
+  });
+
+  (async () => {
+    try {
+      const stats = await window.pwpage.stats();
+      document.getElementById('stat-blocked').textContent = Number(stats.blocked).toLocaleString();
+      document.getElementById('stat-total').textContent =
+        Number(stats.requests).toLocaleString() + ' total requests seen this session';
+    } catch (_) {}
+  })();
+
+  async function loadWeather(city) {
+    const w = await window.pwpage.weather(city);
+    if (w.error) { document.getElementById('wx-meta').textContent = w.error; return; }
+    document.getElementById('wx-temp').textContent = Math.round(w.temp) + '°C';
+    document.getElementById('wx-meta').innerHTML =
+      w.city + (w.country ? ', ' + w.country : '') + '<br>' +
+      '↑' + Math.round(w.max) + '° / ↓' + Math.round(w.min) + '° · 💨 ' + Math.round(w.wind) + ' km/h';
+  }
+  loadWeather();
+  document.getElementById('city-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const c = document.getElementById('city-input').value.trim();
+    if (c) { loadWeather(c); document.getElementById('city-input').value = ''; }
+  });
+
+  setInterval(() => {
+    document.getElementById('clock').textContent =
+      new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }, 1000);
+
+  (async () => {
+    const el = document.getElementById('news-list');
+    const r = await window.pwpage.news();
+    if (r.error) { el.textContent = 'News unavailable: ' + r.error; return; }
+    const doc = new DOMParser().parseFromString(r.xml, 'text/xml');
+    const items = [...doc.querySelectorAll('item')].slice(0, 7);
+    el.innerHTML = '';
+    for (const it of items) {
+      const title = it.querySelector('title')?.textContent || '';
+      const link  = it.querySelector('link')?.textContent || '#';
+      const d = document.createElement('div');
+      d.className = 'news-item';
+      const a = document.createElement('a');
+      a.href = link; a.textContent = title; a.target = '_blank';
+      d.appendChild(a);
+      el.appendChild(d);
+    }
+    if (!items.length) el.textContent = 'No stories loaded.';
+  })();
+</script>
+</body>
+</html>
