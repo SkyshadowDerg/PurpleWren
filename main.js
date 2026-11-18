@@ -110,7 +110,9 @@ function setupSession(name, opts = {}) {
     ses.setProxy({ proxyRules: TOR_PROXY, proxyBypassRules: '<local>' }).catch(() => {});
     ses.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:115.0) Gecko/20100101 Firefox/115.0');
   }
+  if (typeof ses.setWebRTCIPHandlingPolicy === 'function') {
   ses.setWebRTCIPHandlingPolicy(opts.tor ? 'disable_non_proxied_udp' : 'default_public_interface_only');
+}
   ses.setPermissionRequestHandler((wc, permission, cb) => {
     if (permission === 'geolocation') return cb(false);   // hard deny
     cb(['clipboard-read', 'clipboard-sanitized-write', 'fullscreen'].includes(permission));
