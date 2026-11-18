@@ -238,12 +238,15 @@ async function openDock(id) {
   document.querySelectorAll('.dock-btn').forEach(b => b.classList.remove('active-dock'));
   const btnIds = { lumo: 'btn-lumo', calc: 'btn-calc', converter: 'btn-convert', hub: 'btn-hub', mail: 'btn-mail' };
   $(btnIds[id]).classList.add('active-dock');
+  document.querySelectorAll('.rail-btn').forEach(b =>
+      b.classList.toggle('active-dock', b.dataset.dock === id));
 }
 function closeDock() {
   state.dock = null;
   $('dock').classList.add('hidden');
   $('dock-content').innerHTML = '';
   document.querySelectorAll('.dock-btn').forEach(b => b.classList.remove('active-dock'));
+  document.querySelectorAll('.rail-btn').forEach(b => b.classList.remove('active-dock'))
 }
 
 /* ================= omnibox & toolbar wiring ================= */
