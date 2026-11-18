@@ -1,0 +1,75 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Calculator</title>
+<style>
+  :root { --accent:#6d4aff; --bg:#16151d; --bg2:#1f1d2b; --bg3:#2a2738; --fg:#ece9f7; --muted:#8d88a5; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--fg); font-family:'Segoe UI',system-ui,sans-serif; padding:14px; display:flex; flex-direction:column; gap:10px; height:100vh; }
+  #display { width:100%; padding:16px 14px; border-radius:12px; border:1px solid var(--bg3); background:var(--bg2); color:var(--fg); font-size:22px; text-align:right; outline:none; }
+  #preview { color:var(--muted); font-size:13px; text-align:right; min-height:18px; }
+  #history { flex:1; overflow-y:auto; font-size:12px; color:var(--muted); display:flex; flex-direction:column; gap:4px; }
+  .h-item { padding:6px 8px; border-radius:8px; cursor:pointer; }
+  .h-item:hover { background:var(--bg3); color:var(--fg); }
+  .keys { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
+  .keys button { padding:12px 0; border:none; border-radius:10px; background:var(--bg2); color:var(--fg); font-size:16px; cursor:pointer; }
+  .keys button:hover { background:var(--bg3); }
+  .keys button.op { color:var(--accent); font-weight:600; }
+  .keys button.eq { background:var(--accent); color:#fff; }
+</style>
+</head>
+<body>
+  <input id="display" type="text" placeholder="0" autofocus>
+  <div id="preview"></div>
+  <div class="keys">
+    <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button><button class="op" data-k="/">÷</button>
+    <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button><button class="op" data-k="*">×</button>
+    <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button><button class="op" data-k="-">−</button>
+    <button data-k="0">0</button><button data-k=".">.</button><button class="eq" data-k="=">=</button><button class="op" data-k="+">+</button>
+    <button data-k="(">(</button><button data-k=")">)</button><button class="op" id="clear">C</button><button class="op" id="back">⌫</button>
+  </div>
+  <div id="history"></div>
+
+<script>
+  const disp = document.getElementById('display');
+  const prev = document.getElementById('preview');
+  const hist = document.getElementById('history');
+
+  function safeEval(expr) {
+    if (!/^[\d\s+\-*/().%]+$/.test(expr)) throw new Error('invalid');
+    const v = Function('"use strict";return (' + expr.replace(/%/g, '/100') + ')')();
+    if (typeof v !== 'number' || !isFinite(v)) throw new Error('invalid');
+    return v;
+  }
+  function evaluate() {
+    try {
+      const v = safeEval(disp.value);
+      addHistory(disp.value + ' = ' + v);
+      disp.value = String(v); prev.textContent = '';
+    } catch (_) { prev.textContent = 'Invalid expression'; }
+  }
+  function addHistory(text) {
+    const d = document.createElement('div');
+    d.className = 'h-item'; d.textContent = text;
+    d.onclick = () => { disp.value = text.split('= ')[1] || ''; prev.textContent = ''; disp.focus(); };
+    hist.prepend(d);
+  }
+  disp.addEventListener('input', () => {
+    try { prev.textContent = '= ' + safeEval(disp.value); } catch (_) { prev.textContent = ''; }
+  });
+  disp.addEventListener('keydown', e => { if (e.key === 'Enter') evaluate(); });
+
+  document.querySelectorAll('.keys button[data-k]').forEach(b => {
+    b.addEventListener('click', () => {
+      const k = b.dataset.k;
+      if (k === '=') evaluate();
+      else disp.value += k;
+      disp.focus();
+    });
+  });
+  document.getElementById('clear').onclick = () => { disp.value = ''; prev.textContent = ''; disp.focus(); };
+  document.getElementById('back').onclick  = () => { disp.value = disp.value.slice(0, -1); disp.focus(); };
+</script>
+</body>
+</html>

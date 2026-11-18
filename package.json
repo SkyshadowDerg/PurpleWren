@@ -13,17 +13,29 @@
     "dist:linux": "electron-builder --linux AppImage"
   },
   "devDependencies": {
-    "electron": "^31.3.0",
-    "electron-builder": "^24.13.3"
+    "electron": "^45.3.4",
+    "electron-builder": "^25.1.0"
   },
   "build": {
     "appId": "me.purplewren.browser",
     "productName": "PurpleWren",
-    "files": ["main.js", "renderer/**/*"],
-    "directories": { "output": "dist" },
+    "files": [
+      "main.js",
+      "renderer/**/*"
+    ],
+    "directories": {
+      "output": "dist"
+    },
     "win": {
       "icon": "renderer/icons/browser.ico",
-      "target": [ { "target": "nsis" }, { "target": "portable" } ]
+      "target": [
+        {
+          "target": "nsis"
+        },
+        {
+          "target": "portable"
+        }
+      ]
     },
     "nsis": {
       "oneClick": false,
@@ -36,5 +48,14 @@
       "target": "AppImage",
       "category": "Network"
     }
+  },
+  "allowScripts": {
+    "node-gyp@12.4.0": true,
+    "tinyglobby@0.2.17": true,
+    "picomatch@4.0.7": true,
+    "fdir@6.5.0": true,
+    "cacache@16.1.3": true,
+    "tar@6.2.1": true,
+    "make-fetch-happen@10.2.1": true
   }
 }

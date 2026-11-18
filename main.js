@@ -110,7 +110,9 @@ function setupSession(name, opts = {}) {
     ses.setProxy({ proxyRules: TOR_PROXY, proxyBypassRules: '<local>' }).catch(() => {});
     ses.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:115.0) Gecko/20100101 Firefox/115.0');
   }
+  if (typeof ses.setWebRTCIPHandlingPolicy === 'function') {
   ses.setWebRTCIPHandlingPolicy(opts.tor ? 'disable_non_proxied_udp' : 'default_public_interface_only');
+}
   ses.setPermissionRequestHandler((wc, permission, cb) => {
     if (permission === 'geolocation') return cb(false);   // hard deny
     cb(['clipboard-read', 'clipboard-sanitized-write', 'fullscreen'].includes(permission));
@@ -231,9 +233,17 @@ function createWindow() {
   win = new BrowserWindow({
     width: 1280, height: 850, minWidth: 900, minHeight: 600,
     frame: false, backgroundColor: '#16151d', icon: icon.isEmpty() ? undefined : icon,
-    webPreferences: { preload: R('preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: false }
+    webPreferences: { preload: R('preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: false, webviewTag: true }
   });
   win.loadFile(R('index.html'));
+
+ // F12 toggles DevTools for the browser UI; Shift+F12 is handled in the renderer
+win.webContents.on('before-input-event', (event, input) => {
+  if (input.type === 'keyDown' && input.key === 'F12' && !input.shift) {
+    win.webContents.toggleDevTools();
+  }
+});
+
   win.webContents.on('did-finish-load', () => broadcast());   // first paint gets state
   win.on('maximize',   () => win.webContents.send('pw:max', true));
   win.on('unmaximize', () => win.webContents.send('pw:max', false));
@@ -315,6 +325,9 @@ ipcMain.handle('pw:convert-save', async (_e, payload) => {
 });
 ipcMain.on('pw:lumo-ask', (_e, question) => {           // Maps → Lumo dock
   if (win && !win.isDestroyed()) win.webContents.send('pw:maps-ask', question);
+});
+ipcMain.on('pw:open-settings-request', () => {
+  if (win) win.webContents.send('pw:show-settings');
 });
 
 /* ================= lifecycle ================= */
