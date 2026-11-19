@@ -6,7 +6,7 @@ on:
       - 'v*'
 
 permissions:
-  contents: write
+  contents: write        # required so GH_TOKEN can create the draft release
 
 jobs:
   build:
@@ -23,8 +23,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install
-      - run: npm run ${{ matrix.cmd }}
+          cache: npm
+      - run: npm ci
+      - run: npm run ${{ matrix.cmd }} -- --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          EP_PUBLISH: always

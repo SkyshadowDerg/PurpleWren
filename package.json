@@ -1,6 +1,6 @@
 {
   "name": "purplewren",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Privacy-first, Proton-themed browser. Startpage search, tracker blocking, anti-fingerprinting, Tor & incognito tabs, built-in Lumo and Proton apps.",
   "main": "main.js",
   "license": "MIT",
@@ -17,12 +17,17 @@
     "electron-builder": "^25.1.0"
   },
   "build": {
-    "appId": "me.purplewren.browser",
-    "productName": "PurpleWren",
-    "files": [
-      "main.js",
-      "renderer/**/*"
-    ],
+  "appId": "me.purplewren.browser",
+  "productName": "PurpleWren",
+  "publish": {
+    "provider": "github",
+    "owner": "YourUsername",
+    "repo": "PurpleWren"
+  },
+  "files": [
+    "main.js",
+    "renderer/**/*"
+  ],
     "directories": {
       "output": "dist"
     },
@@ -57,5 +62,10 @@
     "cacache@16.1.3": true,
     "tar@6.2.1": true,
     "make-fetch-happen@10.2.1": true
+  },
+  "dependencies": {
+    "@ghostery/adblocker-electron": "^2.20.3",
+    "cross-fetch": "^4.1.0",
+    "electron-updater": "^6.8.11"
   }
 }

@@ -14,8 +14,11 @@ contextBridge.exposeInMainWorld('purplewren', {
   aliasCreate:    host => ipcRenderer.invoke('pw:alias-create', host),
   vpnFind:        () => ipcRenderer.invoke('pw:vpn-find'),
   vpn:            action => ipcRenderer.invoke('pw:vpn', action),
-  openMaps:       () => {},     // maps opens via dock/webview; kept for compat
-  onState:    cb => ipcRenderer.on('pw:state', (_e, s) => cb(s)),
-  onMax:      cb => ipcRenderer.on('pw:max', (_e, m) => cb(m)),
-  onMapsAsk:  cb => ipcRenderer.on('pw:maps-ask', (_e, q) => cb(q))
+  wrenblockStats: host => ipcRenderer.invoke('pw:wrenblock-stats', host),
+  wrenblockTrust: host => ipcRenderer.invoke('pw:wrenblock-trust', host),
+  wrenblockSet:   patch => ipcRenderer.invoke('pw:wrenblock-set', patch),
+  onState:        cb => ipcRenderer.on('pw:state', (_e, s) => cb(s)),
+  onMax:          cb => ipcRenderer.on('pw:max', (_e, m) => cb(m)),
+  onMapsAsk:      cb => ipcRenderer.on('pw:maps-ask', (_e, q) => cb(q)),
+  onShowSettings: cb => ipcRenderer.on('pw:show-settings', () => cb())
 });

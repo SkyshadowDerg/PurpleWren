@@ -3,30 +3,70 @@ const { app, BrowserWindow, ipcMain, session, dialog, nativeImage } = require('e
 const path = require('path');
 const fs = require('fs');
 const { execFile } = require('child_process');
+const { ElectronBlocker } = require('@ghostery/adblocker-electron');
+const { Request } = require('@ghostery/adblocker');
+const crossFetch = require('cross-fetch');
+const { autoUpdater } = require('electron-updater');
 
 const IS_WIN = process.platform === 'win32';
 const TOR_PROXY = 'socks5://127.0.0.1:9050';
 const R = (...p) => path.join(__dirname, 'renderer', ...p);
 
+/* F12 opens DevTools for whatever has focus (browser UI or a webview's page). */
+app.on('web-contents-created', (_e, wc) => {
+  wc.on('before-input-event', (ev, input) => {
+    if (input.type === 'keyDown' && input.key === 'F12') {
+      ev.preventDefault();
+      wc.toggleDevTools();
+    }
+  });
+  /* WrenBlock cosmetic filtering: hide ad/cookie-wall elements as pages load */
+  wc.on('dom-ready', () => {
+    try {
+      const url = (wc.getURL && wc.getURL()) || '';
+      if (!url.startsWith('http') || !wbEngine || !store.settings.wrenblock.enabled) return;
+      const hostname = hostOf(url);
+      const domain = hostname.split('.').slice(-2).join('.');
+      const { styles } = wbEngine.getCosmeticsFilters({
+        hostname, domain, url,
+        classes: [], ids: [], hrefs: [], decorations: []
+      });
+      if (styles) wc.insertCSS(styles, { cssOrigin: 'user' });
+    } catch (_) {}
+  });
+});
+
 /* ================= persistent store ================= */
 const DEFAULT_SETTINGS = {
-  searchEngine: 'startpage',     // startpage | duckduckgo | brave | google
-  fpSpoof: true,                 // anti-fingerprinting master toggle
-  strictBlock: false,            // block ALL third-party except CDN allowlist
+  searchEngine: 'startpage',
+  fpSpoof: true,
+  strictBlock: false,
   weatherCity: 'London',
   simpleLoginKey: '',
-  lumoUrl: 'https://lumo.proton.me'
+  lumoUrl: 'https://lumo.proton.me',
+  wrenblock: {
+    enabled: true,
+    lists: {
+      easylist: true, easyprivacy: true, annoyance: true,
+      cookie: true, social: true, germany: false
+    },
+    customUrls: [],
+    trusted: []              // hostnames user marked "trust this site"
+  }
 };
 let store = {
   bookmarks: [],
-  history: [],                   // newest first, capped at 500
+  history: [],
   stats: { blocked: 0, requests: 0 },
   settings: Object.assign({}, DEFAULT_SETTINGS)
 };
 function loadStore() {
   try { Object.assign(store, JSON.parse(fs.readFileSync(path.join(app.getPath('userData'), 'store.json'), 'utf8'))); }
   catch (_) { /* first run */ }
-  store.settings = Object.assign({}, DEFAULT_SETTINGS, store.settings);
+  const merged = Object.assign({}, DEFAULT_SETTINGS, store.settings);
+  merged.wrenblock = Object.assign({}, DEFAULT_SETTINGS.wrenblock, (store.settings && store.settings.wrenblock) || {});
+  merged.wrenblock.lists = Object.assign({}, DEFAULT_SETTINGS.wrenblock.lists, merged.wrenblock.lists);
+  store.settings = merged;
 }
 function saveStore() {
   try { fs.writeFileSync(path.join(app.getPath('userData'), 'store.json'), JSON.stringify(store, null, 2)); } catch (_) {}
@@ -47,63 +87,93 @@ function resolveInput(input) {
   return (ENGINES[store.settings.searchEngine] || ENGINES.startpage)(s);
 }
 
-/* ================= tracker / ad blocking ================= */
-const BLOCKLIST = [
-  'doubleclick.net','googlesyndication.com','googleadservices.com','googletagservices.com',
-  'google-analytics.com','googletagmanager.com','adservice.google.com','app-measurement.com',
-  'connect.facebook.net','facebook.net','analytics.tiktok.com','ads.tiktok.com',
-  'static.ads-twitter.com','ads-twitter.com','analytics.twitter.com','snap.licdn.com',
-  'px.ads.linkedin.com','ct.pinterest.com','tr.snapchat.com','sc-static.net',
-  'bat.bing.com','clarity.ms','mc.yandex.ru','scorecardresearch.com','quantserve.com',
-  'quantcount.com','chartbeat.com','parsely.com','mixpanel.com','segment.io','segment.com',
-  'amplitude.com','heapanalytics.com','kissmetrics.com','branch.io','appsflyer.com',
-  'adjust.com','kochava.com','singular.net','onelink.me',
-  'hotjar.com','hotjar.io','fullstory.com','logrocket.com','logrocket.io',
-  'luckyorange.com','mouseflow.com','crazyegg.com','clicktale.net','smartlook.com',
-  'inspectlet.com',
-  'fpjs.io','fpjsapi.azurewebsites.net','openfpcdn.io','fingerprintjs.com',
-  'threatmetrix.com','h.online-metrix.net','perimeterx.net','px-cdn.net','pxchk.net',
-  'datadome.co','distinctid.com',
-  'adnxs.com','rubiconproject.com','pubmatic.com','criteo.com','criteo.net','bidswitch.net',
-  'taboola.com','outbrain.com','amazon-adsystem.com','moatads.com','doubleverify.com',
-  'adsrvr.org','casalemedia.com','smartadserver.com','teads.tv','sharethrough.com',
-  'media.net','revcontent.com','mgid.com','popads.net','propellerads.com','zedo.com',
-  'openx.net','indexww.com','gumgum.com','sovrn.com','lijit.com','yieldmo.com',
-  'sentry.io','nr-data.net','bugsnag.com'
-];
-const CDN_ALLOW = new Set([
-  'fonts.googleapis.com','fonts.gstatic.com','cdn.jsdelivr.net','unpkg.com',
-  'cdnjs.cloudflare.com','tile.openstreetmap.org','basemaps.cartocdn.com',
-  'a.basemaps.cartocdn.com','b.basemaps.cartocdn.com','c.basemaps.cartocdn.com',
-  'd.basemaps.cartocdn.com','api.open-meteo.com','geocoding-api.open-meteo.com',
-  'nominatim.openstreetmap.org','unpkg.com'
-]);
-function hostOf(u) { try { return new URL(u).hostname.toLowerCase(); } catch (_) { return ''; } }
-function isBlocked(host) { return !!host && BLOCKLIST.some(d => host === d || host.endsWith('.' + d)); }
+/* ================= WrenBlock ================= */
+const WRENBLOCK_LISTS = {
+  easylist:    { name: 'EasyList',                        url: 'https://easylist.to/easylist/easylist.txt' },
+  easyprivacy: { name: 'EasyPrivacy',                     url: 'https://easylist.to/easylist/easyprivacy.txt' },
+  annoyance:   { name: "Fanboy's Annoyance (overlays)",   url: 'https://secure.fanboy.co.nz/fanboy-annoyance.txt' },
+  cookie:      { name: 'EasyList Cookie (banners)',       url: 'https://secure.fanboy.co.nz/fanboy-cookiemonster.txt' },
+  social:      { name: "Fanboy's Social (widgets)",       url: 'https://secure.fanboy.co.nz/fanboy-social.txt' },
+  germany:     { name: 'EasyList Germany (regional)',     url: 'https://easylist.to/easylistgermany/easylistgermany.txt' }
+};
 
-function applyBlocking(ses) {
+/* strict-mode third-party lockdown still uses this allowlist */
+const CDN_ALLOW = new Set([
+  'fonts.googleapis.com', 'fonts.gstatic.com', 'cdn.jsdelivr.net', 'unpkg.com',
+  'cdnjs.cloudflare.com', 'tile.openstreetmap.org', 'basemaps.cartocdn.com',
+  'a.basemaps.cartocdn.com', 'b.basemaps.cartocdn.com', 'c.basemaps.cartocdn.com',
+  'd.basemaps.cartocdn.com', 'api.open-meteo.com', 'geocoding-api.open-meteo.com',
+  'nominatim.openstreetmap.org'
+]);
+
+function hostOf(u) { try { return new URL(u).hostname.toLowerCase(); } catch (_) { return ''; } }
+
+let wbEngine = null;
+const wbCounts = new Map();          // initiator hostname -> blocked-on-this-site count
+
+function wrenblockUrls() {
+  const conf = store.settings.wrenblock;
+  return Object.entries(WRENBLOCK_LISTS)
+    .filter(([id]) => conf.lists[id])
+    .map(([, l]) => l.url)
+    .concat(conf.customUrls || []);
+}
+
+async function buildWrenblock() {
+  const conf = store.settings.wrenblock;
+  if (!conf.enabled) { wbEngine = null; return; }
+  const urls = wrenblockUrls();
+  if (!urls.length) { wbEngine = null; return; }
+  wbEngine = await ElectronBlocker.fromLists(crossFetch, urls, {
+    path: path.join(app.getPath('userData'), 'wrenblock-engine.bin'),
+    read: fs.promises.readFile,
+    write: fs.promises.writeFile
+  });
+  console.log('[WrenBlock] engine ready,', urls.length, 'filter lists');
+}
+
+/* Electron resourceType -> adblocker request type */
+const TYPE_MAP = {
+  mainFrame: 'document', subFrame: 'sub_frame', stylesheet: 'stylesheet',
+  script: 'script', image: 'image', font: 'font', xhr: 'xhr', fetch: 'xhr',
+  ping: 'ping', cspReport: 'other', media: 'media', webSocket: 'websocket',
+  webTransport: 'websocket', other: 'other'
+};
+
+function wireWrenblock(ses) {
   const filter = { urls: ['http://*/*', 'https://*/*', 'ws://*/*', 'wss://*/*'] };
   ses.webRequest.onBeforeRequest(filter, (details, cb) => {
     store.stats.requests++;
     const host = hostOf(details.url);
-    if (isBlocked(host)) { store.stats.blocked++; return cb({ cancel: true }); }
-    if (store.settings.strictBlock) {
-      const init = hostOf(details.initiator || details.referrer || '');
-      // file:// initiators (our own app pages) have an empty host — allow their deps
-      if (init && host && init !== host && !CDN_ALLOW.has(host)) {
-        store.stats.blocked++;
-        return cb({ cancel: true });
-      }
+    const init = hostOf(details.initiator || details.referrer || '');
+    const conf = store.settings.wrenblock;
+
+    if (conf.enabled && conf.trusted.includes(init)) return cb({});   // user trusts this site
+
+    if (conf.enabled && wbEngine) {
+      try {
+        const req = Request.fromRawDetails({
+          url: details.url,
+          type: TYPE_MAP[details.resourceType] || 'other'
+        });
+        if (wbEngine.match(req).match) {
+          store.stats.blocked++;
+          const key = init || host;
+          wbCounts.set(key, (wbCounts.get(key) || 0) + 1);
+          return cb({ cancel: true });
+        }
+      } catch (_) { /* fall through to allow */ }
+    }
+
+    if (store.settings.strictBlock && init && host && init !== host && !CDN_ALLOW.has(host)) {
+      store.stats.blocked++;
+      return cb({ cancel: true });
     }
     cb({});
   });
 }
 
 /* ================= sessions ================= */
-const SES  = () => session.fromPartition('persist:pw');
-const INCG = () => session.fromPartition('pw-incog');
-const TOR  = () => session.fromPartition('pw-tor');
-
 function setupSession(name, opts = {}) {
   const ses = session.fromPartition(name);
   if (opts.tor) {
@@ -111,13 +181,13 @@ function setupSession(name, opts = {}) {
     ses.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:115.0) Gecko/20100101 Firefox/115.0');
   }
   if (typeof ses.setWebRTCIPHandlingPolicy === 'function') {
-  ses.setWebRTCIPHandlingPolicy(opts.tor ? 'disable_non_proxied_udp' : 'default_public_interface_only');
-}
+    ses.setWebRTCIPHandlingPolicy(opts.tor ? 'disable_non_proxied_udp' : 'default_public_interface_only');
+  }
   ses.setPermissionRequestHandler((wc, permission, cb) => {
-    if (permission === 'geolocation') return cb(false);   // hard deny
+    if (permission === 'geolocation') return cb(false);
     cb(['clipboard-read', 'clipboard-sanitized-write', 'fullscreen'].includes(permission));
   });
-  applyBlocking(ses);
+  wireWrenblock(ses);
   return ses;
 }
 
@@ -146,7 +216,8 @@ async function weatherGet() {
   if (!loc) return { error: 'City not found' };
   const w = await fetch('https://api.open-meteo.com/v1/forecast?latitude=' + loc.latitude +
     '&longitude=' + loc.longitude + '&current_weather=true' +
-    '&daily=temperature_2m_max,temperature_2m_min&timezone=auto').then(r => r.json());
+    '&daily=temperature_2m_max,temperature_2m_min' +
+    '&temperature_unit=celsius&wind_speed_unit=kmh&timezone=auto').then(r => r.json());
   return {
     city: loc.name, country: loc.country,
     temp: w.current_weather.temperature, wind: w.current_weather.windspeed,
@@ -232,19 +303,12 @@ function createWindow() {
   const icon = nativeImage.createFromPath(R('icons', 'browser.png'));
   win = new BrowserWindow({
     width: 1280, height: 850, minWidth: 900, minHeight: 600,
-    frame: false, backgroundColor: '#16151d', icon: icon.isEmpty() ? undefined : icon,
+    frame: false, backgroundColor: '#131118', icon: icon.isEmpty() ? undefined : icon,
     webPreferences: { preload: R('preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: false, webviewTag: true }
   });
   win.loadFile(R('index.html'));
 
- // F12 toggles DevTools for the browser UI; Shift+F12 is handled in the renderer
-win.webContents.on('before-input-event', (event, input) => {
-  if (input.type === 'keyDown' && input.key === 'F12' && !input.shift) {
-    win.webContents.toggleDevTools();
-  }
-});
-
-  win.webContents.on('did-finish-load', () => broadcast());   // first paint gets state
+  win.webContents.on('did-finish-load', () => broadcast());
   win.on('maximize',   () => win.webContents.send('pw:max', true));
   win.on('unmaximize', () => win.webContents.send('pw:max', false));
 }
@@ -263,7 +327,7 @@ ipcMain.handle('pw:paths', () => ({
   converter: 'file://' + R('converter.html'),
   pagePreload: R('page-preload.js')
 }));
-ipcMain.on('pw:record', (_e, url, title) => {           // history at event time
+ipcMain.on('pw:record', (_e, url, title) => {
   const u = String(url || '');
   if (!u || u.startsWith('file://')) return;
   store.history = store.history.filter(h => h.url !== u);
@@ -272,7 +336,7 @@ ipcMain.on('pw:record', (_e, url, title) => {           // history at event time
 });
 ipcMain.handle('pw:history', () => store.history);
 ipcMain.handle('pw:bookmarks', () => store.bookmarks);
-ipcMain.handle('pw:stats', () => store.stats);          // NEW TAB STATS WIDGET
+ipcMain.handle('pw:stats', () => store.stats);
 ipcMain.on('pw:bookmark-toggle', (_e, item) => {
   const i = store.bookmarks.findIndex(b => b.url === item.url);
   if (i >= 0) store.bookmarks.splice(i, 1);
@@ -284,6 +348,39 @@ ipcMain.on('pw:settings-set', (_e, patch) => {
   Object.assign(store.settings, patch || {});
   saveStore(); broadcast();
 });
+
+/* ---- WrenBlock popup IPC ---- */
+ipcMain.handle('pw:wrenblock-stats', (_e, host) => {
+  const conf = store.settings.wrenblock;
+  return {
+    enabled: !!conf.enabled,
+    engineReady: !!wbEngine,
+    trusted: conf.trusted.includes(host),
+    blockedOnSite: wbCounts.get(host) || 0,
+    totalBlocked: store.stats.blocked
+  };
+});
+ipcMain.handle('pw:wrenblock-trust', (_e, host) => {
+  const conf = store.settings.wrenblock;
+  const i = conf.trusted.indexOf(host);
+  if (i >= 0) conf.trusted.splice(i, 1); else conf.trusted.push(host);
+  saveStore();
+  return { trusted: i < 0 };
+});
+ipcMain.handle('pw:wrenblock-set', async (_e, patch) => {
+  const conf = store.settings.wrenblock;
+  if (patch && typeof patch.enabled === 'boolean') conf.enabled = patch.enabled;
+  if (patch && patch.lists) conf.lists = Object.assign({}, conf.lists, patch.lists);
+  if (patch && Array.isArray(patch.customUrls)) conf.customUrls = patch.customUrls;
+  saveStore(); broadcast();
+  await buildWrenblock();          // handler closures read wbEngine live — no rewiring needed
+  return { ok: true };
+});
+
+/* ---- auto-update IPC ---- */
+ipcMain.on('pw:update-check', () => autoUpdater.checkForUpdatesAndNotify());
+ipcMain.on('pw:update-install', () => autoUpdater.quitAndInstall());
+
 ipcMain.handle('pw:weather', async (_e, city) => {
   if (city && city.trim()) { store.settings.weatherCity = city.trim(); saveStore(); }
   try { return await weatherGet(); } catch (err) { return { error: String(err.message || err) }; }
@@ -323,11 +420,11 @@ ipcMain.handle('pw:convert-save', async (_e, payload) => {
   fs.writeFileSync(filePath, Buffer.from(payload.contentBase64, 'base64'));
   return { ok: true };
 });
-ipcMain.on('pw:lumo-ask', (_e, question) => {           // Maps → Lumo dock
+ipcMain.on('pw:lumo-ask', (_e, question) => {
   if (win && !win.isDestroyed()) win.webContents.send('pw:maps-ask', question);
 });
 ipcMain.on('pw:open-settings-request', () => {
-  if (win) win.webContents.send('pw:show-settings');
+  if (win && !win.isDestroyed()) win.webContents.send('pw:show-settings');
 });
 
 /* ================= lifecycle ================= */
@@ -335,16 +432,29 @@ const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) app.quit();
 else {
   app.on('second-instance', () => { if (win) { win.restore(); win.focus(); } });
-  app.whenReady().then(() => {
+  app.whenReady().then(async () => {
     loadStore();
     setupSession('persist:pw', {});
     setupSession('pw-incog', {});
     setupSession('pw-tor', { tor: true });
-    if (IS_WIN) {                                       // default-browser eligibility
+    buildWrenblock().catch(err => console.error('[WrenBlock]', err));   // async; handler allows requests until ready
+    if (IS_WIN) {
       app.setAsDefaultProtocolClient('http');
       app.setAsDefaultProtocolClient('https');
     }
     createWindow();
+
+    /* ---- auto-updater (works only in packaged NSIS builds) ---- */
+    autoUpdater.autoDownload = true;
+    autoUpdater.autoInstallOnAppQuit = true;
+    autoUpdater.on('update-downloaded', (info) => {
+      if (win && !win.isDestroyed())
+        win.webContents.send('pw:update-ready', info.version);
+    });
+    autoUpdater.on('error', (err) => console.error('[Updater]', err));
+    setTimeout(() => autoUpdater.checkForUpdatesAndNotify(), 30_000);                 // check 30s after launch
+    setInterval(() => autoUpdater.checkForUpdatesAndNotify(), 6 * 60 * 60 * 1000);    // then every 6h
+
     app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
   });
   app.on('window-all-closed', () => app.quit());

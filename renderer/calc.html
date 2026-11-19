@@ -4,19 +4,40 @@
 <meta charset="utf-8">
 <title>Calculator</title>
 <style>
-  :root { --accent:#6d4aff; --bg:#16151d; --bg2:#1f1d2b; --bg3:#2a2738; --fg:#ece9f7; --muted:#8d88a5; }
+  :root {
+    --accent:#6d4aff; --accent-soft:rgba(109,74,255,.16);
+    --fg:#ece9f7; --muted:#8d88a5;
+    --pane:rgba(255,255,255,.05); --pane-hover:rgba(255,255,255,.09);
+    --border:rgba(255,255,255,.08);
+  }
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { background:var(--bg); color:var(--fg); font-family:'Segoe UI',system-ui,sans-serif; padding:14px; display:flex; flex-direction:column; gap:10px; height:100vh; }
-  #display { width:100%; padding:16px 14px; border-radius:12px; border:1px solid var(--bg3); background:var(--bg2); color:var(--fg); font-size:22px; text-align:right; outline:none; }
+  body {
+    height:100vh; display:flex; flex-direction:column; gap:10px; padding:14px;
+    color:var(--fg); font-family:'Segoe UI',system-ui,sans-serif;
+    background:
+      radial-gradient(700px 420px at 90% -10%, rgba(109,74,255,.16), transparent 60%),
+      #131118;
+  }
+  #display {
+    width:100%; padding:16px 14px; border-radius:12px;
+    border:1px solid var(--border); background:var(--pane);
+    color:var(--fg); font-size:22px; text-align:right; outline:none;
+  }
+  #display:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
   #preview { color:var(--muted); font-size:13px; text-align:right; min-height:18px; }
-  #history { flex:1; overflow-y:auto; font-size:12px; color:var(--muted); display:flex; flex-direction:column; gap:4px; }
-  .h-item { padding:6px 8px; border-radius:8px; cursor:pointer; }
-  .h-item:hover { background:var(--bg3); color:var(--fg); }
+  #history { flex:1; overflow-y:auto; font-size:12px; color:var(--muted);
+             display:flex; flex-direction:column; gap:4px; }
+  .h-item { padding:6px 9px; border-radius:8px; cursor:pointer; }
+  .h-item:hover { background:var(--pane-hover); color:var(--fg); }
   .keys { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
-  .keys button { padding:12px 0; border:none; border-radius:10px; background:var(--bg2); color:var(--fg); font-size:16px; cursor:pointer; }
-  .keys button:hover { background:var(--bg3); }
+  .keys button {
+    padding:12px 0; border:1px solid var(--border); border-radius:10px;
+    background:var(--pane); color:var(--fg); font-size:16px; cursor:pointer;
+    transition:background .12s;
+  }
+  .keys button:hover { background:var(--pane-hover); }
   .keys button.op { color:var(--accent); font-weight:600; }
-  .keys button.eq { background:var(--accent); color:#fff; }
+  .keys button.eq { background:var(--accent); border-color:var(--accent); color:#fff; }
 </style>
 </head>
 <body>
